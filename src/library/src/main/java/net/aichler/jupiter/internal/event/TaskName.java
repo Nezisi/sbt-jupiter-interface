@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author Michael Aichler
  */
 class TaskName {
@@ -74,9 +73,9 @@ class TaskName {
     /**
      * Creates a task name for the specified {@code testName}.
      *
-     *
      * @param testSuite The name of the test suite.
-     * @param testName The name of the current test.
+     * @param testName  The name of the current test.
+     *
      * @return A task name instance representing the given testName.
      */
     static TaskName of(String testSuite, String testName) {
@@ -93,11 +92,13 @@ class TaskName {
     /**
      * Creates a task name for the specified {@code identifier}.
      *
-     * @param testSuite The name of the test suite.
+     * @param testSuite  The name of the test suite.
      * @param identifier The test identifier.
+     *
      * @return A task name representing the given identifier.
      */
     static TaskName of(String testSuite, TestIdentifier identifier) {
+        final String removedJunit5SuiteName = removeJunit5SuiteName(testSuite, identifier);
 
         TaskName result = new TaskName();
         result.fullyQualifiedName = testSuite;
@@ -107,19 +108,44 @@ class TaskName {
         if (testSource instanceof ClassSource) {
 
             ClassSource classSource = (ClassSource)testSource;
-            result.nestedSuiteId = nestedSuiteId(testSuite, classSource.getClassName());
+            result.nestedSuiteId = nestedSuiteId(removedJunit5SuiteName, classSource.getClassName());
         }
 
         if (testSource instanceof MethodSource) {
 
             MethodSource methodSource = (MethodSource)testSource;
-            result.nestedSuiteId = nestedSuiteId(testSuite, methodSource.getClassName());
+            result.nestedSuiteId = nestedSuiteId(removedJunit5SuiteName, methodSource.getClassName());
             result.invocation = invocation(UniqueId.parse(identifier.getUniqueId()));
-            result.testName = testName(methodSource.getMethodName(),
-                    methodSource.getMethodParameterTypes());
+            result.testName = testName(methodSource.getMethodName(), methodSource.getMethodParameterTypes());
         }
 
         return result;
+    }
+
+    /**
+     * Removes a leading JUnit 5 suite name from the test suite name, if present.
+     *
+     * @param testSuite The name of the enclosing test suite.
+     * @param identifier  The test identifier.
+     * @return The suite identifier.
+     */
+    private static String removeJunit5SuiteName(String testSuite, TestIdentifier identifier) {
+        final List<UniqueId.Segment> suiteSegments = identifier
+                .getUniqueIdObject()
+                .getSegments()
+                .stream()
+                .filter(segment -> segment.getType().equals("suite"))
+                .collect(Collectors.toList());
+
+        if (suiteSegments.isEmpty()) {
+            return testSuite;
+        }
+
+        final String suiteIdentifier = suiteSegments.get(0).getValue();
+        if (!testSuite.startsWith(suiteIdentifier)) {
+            throw new RuntimeException("Test: " + testSuite + " does not start with JUnit 5 suite: " + suiteIdentifier);
+        }
+        return testSuite.substring(suiteIdentifier.length());
     }
 
     /**
@@ -127,13 +153,12 @@ class TaskName {
      *
      * @param testSuite The name of the enclosing test suite.
      * @param className The name of the current test class.
+     *
      * @return The nested suite identifier (might be {@code null}).
      */
     static String nestedSuiteId(String testSuite, String className) {
-
         if (!className.startsWith(testSuite)) {
-            throw new RuntimeException(
-                    "Test class " + className + " is not enclosed by " + testSuite);
+            throw new RuntimeException("Test class " + className + " is not enclosed by " + testSuite);
         }
 
         if (!className.equals(testSuite)) {
@@ -146,8 +171,9 @@ class TaskName {
     /**
      * Creates a test method name with simplified parameter types.
      *
-     * @param methodName The name of the test method as reported by JUnit.
+     * @param methodName           The name of the test method as reported by JUnit.
      * @param methodParameterTypes The method parameter types as reported by JUnit.
+     *
      * @return The test method signature with simplified parameter types.
      */
     static String testName(String methodName, String methodParameterTypes) {
