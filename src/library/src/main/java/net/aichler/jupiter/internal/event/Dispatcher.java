@@ -24,14 +24,7 @@ import net.aichler.jupiter.internal.Configuration;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.launcher.TestIdentifier;
-import sbt.testing.Event;
-import sbt.testing.EventHandler;
-import sbt.testing.Fingerprint;
-import sbt.testing.OptionalThrowable;
-import sbt.testing.Selector;
-import sbt.testing.Status;
-import sbt.testing.SuiteSelector;
-import sbt.testing.TestSelector;
+import sbt.testing.*;
 
 import java.util.Map;
 import java.util.Optional;
@@ -44,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Dispatcher implements JupiterTestListener {
 
-    private final static Fingerprint fingerprint = new JupiterTestFingerprint();
+    private static final Fingerprint fingerprint = new JupiterTestFingerprint();
 
     private final EventHandler eventHandler;
     private final Map<TestIdentifier,Boolean> reportedIds = new ConcurrentHashMap<>();
@@ -160,28 +153,19 @@ public class Dispatcher implements JupiterTestListener {
         static Selector toSelector(TaskName name) {
 
             String testName = name.testName();
-            if (null != testName) {
-                if (null != name.invocation()) {
-                    testName = testName + ":" + name.invocation();
-                }
+            if (null != testName && (null != name.invocation())) {
+                testName = testName + ":" + name.invocation();
             }
 
             if (null != name.nestedSuiteId()) {
                 if (null != name.testName()) {
-
-                    // FIXME: as soon as JUnitXmlTestsListener supports this
-                    // return new NestedTestSelector(name.nestedSuiteId(), name.testName());
-                    return new TestSelector(name.nestedSuiteId() + "#" + testName);
+                    return new NestedTestSelector(name.nestedSuiteId(), name.testName());
                 }
 
-
-                // FIXME: as soon as JUnitXmlTestsListener supports this
-                // return new NestedSuiteSelector(name.nestedSuiteId());
-                return new TestSelector(name.nestedSuiteId());
+                return new NestedSuiteSelector(name.nestedSuiteId());
             }
 
-            if (null != name.testName()) {
-
+            if (null != testName) {
                 return new TestSelector(testName);
             }
 
