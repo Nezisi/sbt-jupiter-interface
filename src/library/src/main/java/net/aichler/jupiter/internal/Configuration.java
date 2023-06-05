@@ -22,7 +22,6 @@ import net.aichler.jupiter.api.JupiterTestListener;
 import net.aichler.jupiter.internal.listeners.FlatPrintingTestListener;
 import net.aichler.jupiter.internal.listeners.TreePrintingTestListener;
 import net.aichler.jupiter.internal.options.Options;
-import org.junit.jupiter.api.Test;
 import org.junit.platform.engine.TestSource;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.UniqueId.Segment;
@@ -35,11 +34,7 @@ import sbt.testing.Logger;
 import sbt.testing.TaskDef;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -314,7 +309,7 @@ public class Configuration {
      */
     class TestIdentifierFormatter {
 
-        final static String VINTAGE_ENGINE = "junit-vintage";
+        static final String VINTAGE_ENGINE = "junit-vintage";
 
         final TestPlan testPlan;
         final TestIdentifier identifier;
@@ -339,7 +334,6 @@ public class Configuration {
                     .orElse(null);
 
             return path.stream()
-                    .skip(1)
                     .map(this::toName)
                     .filter(Objects::nonNull)
                     .collect(Collectors.joining());
@@ -350,7 +344,9 @@ public class Configuration {
             List<TestIdentifier> result = new ArrayList<>();
 
             do {
-                result.add(identifier);
+                if (identifier.getSource().isPresent()) {
+                    result.add(identifier);
+                }
                 identifier = testPlan.getParent(identifier).orElse(null);
             }
             while (null != identifier);
