@@ -64,13 +64,13 @@ lazy val library = (project in file("src/library"))
       "org.scala-sbt" % "test-interface" % Versions.testInterface
     ),
     libraryDependencies ++= Seq(
-      "org.junit.jupiter" % "junit-jupiter-params" % Versions.junitJupiter % Test,
-      "org.junit.vintage" % "junit-vintage-engine" % Versions.junitVintage % Test,
-      "org.hamcrest" % "hamcrest-library" % "2.2" % Test,
-      "org.mockito" % "mockito-core" % "4.11.0" % Test,
-      "com.novocode" % "junit-interface" % "0.11" % Test,
-      "junit" % "junit" % "4.13.2" % Test
-    ),
+      "org.junit.jupiter" % "junit-jupiter-params" % Versions.junitJupiter,
+      "org.junit.vintage" % "junit-vintage-engine" % Versions.junitVintage,
+      "org.hamcrest" % "hamcrest-library" % "2.2",
+      "org.mockito" % "mockito-core" % "4.11.0",
+      "com.novocode" % "junit-interface" % "0.11",
+      "junit" % "junit" % "4.13.2"
+    ).map(_ % Test),
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-a", "-v"),
     publishTo := sonatypePublishTo.value
   )
